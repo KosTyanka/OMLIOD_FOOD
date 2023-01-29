@@ -51,6 +51,9 @@ async def process_start_command(message: types.Message, state: FSMContext):
 	await message.reply("внес номер телефона в базу")
 	internat_channel_status = await bot.get_chat_member(chat_id='-837114163', user_id=message.from_user.id)
 	if internat_channel_status["status"] != 'left':
+		async with state.proxy() as data:
+			data['class'] = 0
+		await sqlite_db.sql_add_command(state)
 		await FSMAdmin.normal.set()
 		await message.answer('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
 	else:

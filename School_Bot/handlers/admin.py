@@ -50,7 +50,13 @@ async def get_food_command(message:types.Message):
 		if ret[1] != 0:
 			await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}')
 
+@dp.message_handler(commands=['Вопросы_и_Об_авторе'],state='*')
+async def info_command(message:types.Message):
+	await message.answer('По всем вопросам бота <a href="https://t.me/Kos_Tyanka">сюда</a>',parse_mode="HTML")
 
+@dp.message_handler(state=FSMAdmin.admin)
+async def empty_admin(message:types.Message):
+	await message.answer('Бот будет отправлять заявки и статистику для вас, доступные команды можно узнать по кнопке внизу \n /команды бота', reply_markup= kb.admin_kb)
 
 def register_handlers_admin(dp : Dispatcher):
 	#dp.register_message_handler(process_start_command, commands=['start'])
