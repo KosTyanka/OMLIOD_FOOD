@@ -9,7 +9,7 @@ import sqlite3
 import datetime
 import traceback    
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from handlers import admin
+from handlers import admin, internat
 
 class FSMAdmin(StatesGroup):
 	phone = State()
@@ -62,16 +62,24 @@ async def process_start_command(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=FSMAdmin.klass)
 async def select_class_command(message: types.Message, state: FSMContext):
+	if message.text[0] == '/':
+		async with state.proxy() as data:
+			data['class'] = message.text[1:]
+		await sqlite_db.sql_add_command(state)
+		await state.finish()
+		await FSMAdmin.normal.set()
+		await message.answer(f'ваш класс {message.text[1:]}')
+		await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
+		await bot.forward_message(-821666496, message.chat.id, message.message_id)
+	else:
+		data['class'] = 0
+		await sqlite_db.sql_add_command(state)
+		await state.finish()
+		await FSMAdmin.normal.set()
+		await message.answer(f'Вы не ученик')
+		await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
+		await bot.forward_message(-821666496, message.chat.id, message.message_id)
 
-	async with state.proxy() as data:
-		data['class'] = message.text[1:]
-	await sqlite_db.sql_add_command(state)
-	await state.finish()
-	await FSMAdmin.normal.set()
-	await message.answer(f'ваш класс {message.text[1:]}')
-	await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
-	await bot.forward_message(-821666496, message.chat.id, message.message_id)
-	
 
 
 #@dp.message_handler(commands=['start'])
@@ -114,7 +122,7 @@ async def make_internat_command(message:types.Message, state: FSMContext):
 			print(traceback.format_exc())
 			await message.answer('Попробуй написать одним числом без других букв (пример: 11)')
 
-			
+				
 
 @dp.message_handler(commands=['Отправить_заявку'],state=FSMAdmin.normal)
 async def make_request_command(message:types.Message, state: FSMContext):
@@ -123,7 +131,7 @@ async def make_request_command(message:types.Message, state: FSMContext):
 		day = datetime.date.today().isoformat()
 		read = await sqlite_db.internat_read_food(message)
 		for ret in read:
-			await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
+			await bot.send_message(message.from_user.id, f'класс: {ret[0]} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
 			await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
 				add(InlineKeyboardButton(f'Добавить заявку {ret[0]}', callback_data=f'make {ret[0]}')))
 	user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=message.from_user.id)
@@ -151,7 +159,7 @@ async def check_request_command(message:types.Message, state: FSMContext):
 		day = datetime.date.today().isoformat()
 		read = await sqlite_db.internat_read_food(message)
 		for ret in read:
-			await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
+			await bot.send_message(message.from_user.id, f'класс: {ret[0]} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
 			await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
 				add(InlineKeyboardButton(f'Добавить заявку {ret[0]}', callback_data=f'make {ret[0]}')))
 	else:
@@ -159,7 +167,7 @@ async def check_request_command(message:types.Message, state: FSMContext):
 		day = datetime.date.today().isoformat()
 		await message.answer(f'ваш класс: {str(classofuser[0])}')
 		await message.answer(f'сегодняшний день: {day}')
-		food_data = await sqlite_db.get_req_food_command(str(classofuser), day)
+		food_data = await sqlite_db.get_req_food_command(str(classofuser[0]), day)
 		#await message.answer(food_data)
 	
 	if food_data != None:
@@ -186,7 +194,7 @@ async def del_callback_run(callback_query : types.CallbackQuery):
 		user_id = callback_query.from_user.id
 		classofuser = await sqlite_db.class_get_command(user_id)
 		day = datetime.date.today().isoformat()
-		await sqlite_db.food_delete_command(str(classofuser), day)
+		await sqlite_db.food_delete_command(str(classofuser[0]), day)
 		await callback_query.answer(text=f'Заявка удалена.', show_alert=True)
 	else:
    		await bot.send_message(callback_query.from_user.id, 'У тебя нет прав для удаления заявки, напиши сюда для получения доступа @Kos_Tyanka')
@@ -220,21 +228,28 @@ async def make_request_nepoln_command(message:types.Message, state: FSMContext):
 			await message.answer('Попробуй написать одним числом без других букв (пример: 12)')
 		
 
+
 @dp.message_handler(commands= ['confirm', 'все_верно'], state=FSMAdmin.confirm)
 async def confirm_command(message:types.Message, state: FSMContext):
 	async with state.proxy() as data:
 		try:
-			await sqlite_db.req_add_command(state)
 			await message.answer('Заявка отправлена, спасибо', reply_markup=kb.button_case_client)
+			klass = data['class']
+			klass = klass.strip("[('',)]")
+			print(klass)
+			poln = data['poln']
+			nepoln = data['nepoln']
+			day = data['day']
+			await sqlite_db.req_add_command(state)
+			await bot.send_message(-821666496, f'{klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
 			await state.finish()
 			await FSMAdmin.normal.set()
 		except:
+			print(traceback.format_exc())
 			await message.answer('Используй команду /Отправить_заявку заново для заполнения заявки')
 			
 
-@dp.message_handler(state=FSMAdmin.confirm)
-async def confirm_empty_command(message:types.Message):
-	await message.answer('Используй кнопки внизу или напиши /confirm для подтверждения или /cancel для отмены')
+
 
 @dp.message_handler(commands = 'class', state=FSMAdmin.normal)
 async def change_klass(message : types.Message, state= FSMAdmin.normal):
@@ -246,7 +261,10 @@ async def change_klass(message : types.Message, state= FSMAdmin.normal):
 async def empty_normal(message : types.Message, state= FSMAdmin.normal):
 	if await admin.ifadmin(message):
 		print('админ зашел')
-	await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
+	elif await internat.ifinternat(message):
+		print('заведующий интерната зашел')
+	else:
+		await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
 	await bot.forward_message(-821666496, message.chat.id, message.message_id)
 
 

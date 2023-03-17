@@ -8,13 +8,21 @@ import keyboards as kb
 import sqlite3
 import datetime
 import traceback    
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from handlers import client
-
+from aiogram_calendar_Z import simple_cal_callback, SimpleCalendar, dialog_cal_callback
 
 class FSMAdmin(StatesGroup):
 	admin = State()
 
+@dp.message_handler(commands=['id'],state='*')
+async def get_chat_id_command(message: types.Message, state: FSMContext):
+	await message.answer(message.chat.id)
+
+@dp.message_handler(commands=['set'],state='*')
+async def get_chat_id_command(message: types.Message, state: FSMContext):
+	await message.answer(message.text)
+	await state.finish()
 
 async def ifadmin(message: types.Message):
 	user_channel_status = await bot.get_chat_member(chat_id='-855152164', user_id=message.from_user.id)
@@ -38,8 +46,43 @@ async def admin_commands_command(message:types.Message):
 		'\n/Вопросы_и_Об_авторе - отправляет телеграмм для связи с разработчиком', reply_markup= kb.admin_kb)
 
 
-@dp.message_handler(commands=['Получить_питание'],state=FSMAdmin.admin)
+@dp.message_handler(commands=['Получить_питание', 'Календарь'],state=FSMAdmin.admin)
 async def get_food_command(message:types.Message):
+	await message.answer('Питание:', reply_markup = await SimpleCalendar().start_calendar())
+
+
+# simple calendar usage
+@dp.callback_query_handler(simple_cal_callback.filter(), state = FSMAdmin.admin)
+async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict):
+	selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
+	day = date.strftime("%Y-%m-%d")
+	read = await sqlite_db.sql_read_food_by_day(day)
+	await callback_query.message.answer(f'Отправляю питание за {date.strftime("%d/%m/%Y")}')
+	for ret in read:
+		await callback_query.message.answer(f'класс: {ret[0].strip("[()]")} \nполных: {ret[1]} \nнеполных: {ret[2]} \nДата заявки: {ret[3]}')
+
+	await callback_query.message.answer(f'Интернат за {date.strftime("%d/%m/%Y")}')
+	read2 = await sqlite_db.read_internat_req_food_command(day)
+	for ret in read2:
+		await callback_query.message.answer(f'Питание интерната:\n' +
+			f'Первый завтрак: {ret[0]}\n' +
+			f'Второй завтрак: {ret[1]}\n' +
+			f'Обед: {ret[2]}\n' +
+			f'Полдник: {ret[3]}\n' +
+			f'Первый ужин: {ret[4]}\n' +
+			f'Второй ужин: {ret[5]}\n'
+			)
+
+	if selected:
+		await callback_query.message.answer(
+			f'Что дальше?',
+			reply_markup= kb.after_calendar_admin_kb
+		)
+
+
+#ЭТО БУДЕТ CALLBACK QUERY
+#@dp.message_handler(commands=['Получить_питание'],state=FSMAdmin.admin)
+async def get_food_callback(message:types.Message):
 	await message.answer('Высылаю питание:')
 	read = await sqlite_db.sql_read_food(message)
 	for ret in read:
@@ -54,9 +97,32 @@ async def get_food_command(message:types.Message):
 async def info_command(message:types.Message):
 	await message.answer('По всем вопросам бота <a href="https://t.me/Kos_Tyanka">сюда</a>',parse_mode="HTML")
 
+@dp.message_handler(commands=['give_starosta'],state=FSMAdmin.admin)
+async def give_starosta(message:types.Message):
+	read = await sqlite_db.get_all_id()
+	for ret in read:
+		ret = ret[0]
+		try:
+			user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=ret)
+			if user_channel_status["status"] != 'left':
+				klass = (await sqlite_db.class_get_command(ret))[0]
+				
+
+				#klass = klass[0]
+				user_id = ret
+				phone_number = (await sqlite_db.sql_get_command(ret))[0]
+				phone_number = phone_number[0]
+				await sqlite_db.make_starosta(klass, user_id, phone_number)
+		except:
+			x = 1
+			
+
 @dp.message_handler(state=FSMAdmin.admin)
 async def empty_admin(message:types.Message):
 	await message.answer('Бот будет отправлять заявки и статистику для вас, доступные команды можно узнать по кнопке внизу \n /команды бота', reply_markup= kb.admin_kb)
+
+
+
 
 def register_handlers_admin(dp : Dispatcher):
 	#dp.register_message_handler(process_start_command, commands=['start'])

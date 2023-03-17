@@ -22,8 +22,9 @@ button_cancel_en = KeyboardButton('/cancel')
 button_cancel_rus = KeyboardButton('/отмена') 
 
 class_7A = KeyboardButton('/7A')
+class_7Z = KeyboardButton('/7Ә')
 class_7B = KeyboardButton('/7B')
-buttons7 = [class_7A, class_7B]
+buttons7 = [class_7A, class_7Z,class_7B]
 class_8A = KeyboardButton('/8A')
 class_8Z = KeyboardButton('/8Ә')
 class_8B = KeyboardButton('/8B')
@@ -33,11 +34,20 @@ class_9Z = KeyboardButton('/9Ә')
 class_9B = KeyboardButton('/9B')
 buttons9 = [class_9A, class_9Z, class_9B]
 class_10A = KeyboardButton('/10A')
+class_10Z = KeyboardButton('/10Ә')
 class_10B = KeyboardButton('/10B')
-buttons10 = [class_10A, class_10B]
+buttons10 = [class_10A,class_10Z, class_10B]
 class_11A= KeyboardButton('/11A')
+class_11Z = KeyboardButton('/11Ә')
 class_11B = KeyboardButton('/11B')
-buttons11 = [class_11A, class_11B]
+buttons11 = [class_11A,class_11Z, class_11B]
+class_not_button = KeyboardButton('/Я_не_ученик')
+
+after_calendar_admin_start = KeyboardButton('Вернуться к меню')
+after_calendar_admin_next = KeyboardButton('/Календарь')
+
+after_calendar_admin_kb = ReplyKeyboardMarkup()
+after_calendar_admin_kb.add(after_calendar_admin_next).add(after_calendar_admin_start)
 
 greet_kb = ReplyKeyboardMarkup()
 greet_kb.add(button_hi)
@@ -90,6 +100,11 @@ button_load = KeyboardButton('/Задать_вопрос')
 button_delete = KeyboardButton('/Удалить')
 button_call = KeyboardButton('/Заказать_звонок')
 
+#ИНТЕРНАТ
+button_internat_req = KeyboardButton('/Подать_заявку_на_завтра')
+button_internat_req_today = KeyboardButton('/Корректировать_заявку')
+
+
 
 '''**************************** САМИ КНОПКИ ***************************'''
 
@@ -105,5 +120,6 @@ admin_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(button_admin_help).add(
 #admin_panel_kb.add(button_admin_help).add(button_admin_questions)
 #admin_panel_kb.add(button_admin_answer, button_admin_help, button_admin_delete)
 
+internat_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(button_admin_help).add(button_admin_commands).add(button_internat_req).add(button_internat_req_today).add(button_info)
 
-class_select_buttons = ReplyKeyboardMarkup(resize_keyboard=True).add(*buttons7).add(*buttons8).add(*buttons9).add(*buttons10).add(*buttons11)
+class_select_buttons = ReplyKeyboardMarkup(resize_keyboard=True).add(*buttons7).add(*buttons8).add(*buttons9).add(*buttons10).add(*buttons11).add(class_not_button)
