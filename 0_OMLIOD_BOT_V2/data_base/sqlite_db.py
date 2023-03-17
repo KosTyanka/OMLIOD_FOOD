@@ -18,6 +18,8 @@ def sql_start():
 	base.commit()
 	base.execute('CREATE TABLE IF NOT EXISTS starosty(class TEXT, user_id TEXT PRIMARY KEY, phone_number TEXT)')
 	base.commit()
+	base.execute('CREATE TABLE IF NOT EXISTS profiles(class TEXT, name TEXT, user_id TEXT PRIMARY KEY, phone_number TEXT, talon TEXT, isate BOOLEAN)')
+	base.commit()
 	if req_base:
 		print('ПИТАНИЕ НА МЕСТЕ OK')
 	req_base.execute('CREATE TABLE IF NOT EXISTS food(class TEXT, poln INT, nepoln INT, day DATE)')
@@ -25,6 +27,8 @@ def sql_start():
 	req_base.execute('CREATE TABLE IF NOT EXISTS internat(firstzavtrak INT, secondzavtrak INT, obed INT, poldnik INT, firstuzhin INT, seconduzhin INT,day DATE)')
 	req_base.commit()
 	req_base.execute('CREATE TABLE IF NOT EXISTS absent(class TEXT, whomissing TEXT, day DATE, why TEXT)')
+	req_base.commit()
+	req_base.execute('CREATE TABLE IF NOT EXISTS studentfood(class TEXT, whoate TEXT, talon TEXT, day DATE, user_id TEXT)')
 	req_base.commit()
 
 
@@ -39,6 +43,12 @@ async def req_add_command(state):
 		req_cur.execute('INSERT INTO food VALUES (?, ?, ?, ?)', tuple(data.values()))
 		req_base.commit()
 
+
+async def req_add_new_command(klass, poln, nepoln, day):
+	with req_base:
+		req_cur.execute('INSERT INTO food VALUES (?, ?, ?, ?)', (klass, poln, nepoln, day))
+		req_base.commit()
+
 async def absent_add_command(klass, whomissing, day, why):
 	with req_base:
 		req_cur.execute('INSERT INTO absent VALUES (?,?,?,?)', (klass, whomissing, day,why))
@@ -47,6 +57,11 @@ async def absent_add_command(klass, whomissing, day, why):
 async def get_all_id():
 	with base:
 		result = cur.execute('SELECT user_id FROM menu').fetchall()
+		return result
+
+async def get_starosty():
+	with base:
+		result = cur.execute('SELECT user_id FROM starosty').fetchall()
 		return result
 
 async def make_starosta(klass, user_id, phone_number):
@@ -109,6 +124,91 @@ async def check_food_klass():
 	with req_base:
 		result = req_cur.execute('SELECT class FROM food').fetchall()
 		return result
+
+async def change_name_in_food_command(name, user_id):
+	with req_cur:
+		req_cur.execute('UPDATE studentfood SET name = ? where user_id = ?', (name,user_id))
+		req_base.commit()
+
+# ПРОФИЛИ
+#profiles(class TEXT, name TEXT, user_id TEXT PRIMARY KEY, phone_number TEXT, talon TEXT, isate BOOLEAN)')
+async def make_profile_command(classofuser, name, user_id, phone_number, talon, isate):
+	with base:
+		cur.execute('INSERT INTO profiles VALUES (?, ?, ?, ?, ?, ?)', (classofuser, name, user_id, phone_number, talon, isate))
+		base.commit()
+
+async def change_name_command(name, user_id):
+	with base:
+		cur.execute('UPDATE profiles SET name = ? where user_id = ?', (name, user_id))
+		base.commit()
+
+async def check_profile_exists(user_id):
+	with base:
+		result = cur.execute('SELECT * FROM profiles WHERE user_id = ?', (user_id,)).fetchall()
+		return bool(len(result))
+
+async def get_profile(user_id):
+	with base:
+		result = cur.execute('SELECT * FROM profiles WHERE user_id = ?', (user_id,)).fetchone()
+		return result
+
+async def get_phone_number(user_id):
+	""" Получить телефон """
+	with base:
+		result = cur.execute('SELECT phone FROM menu WHERE user_id = ?', (user_id,)).fetchone()
+		return result
+
+async def get_name(user_id):
+	with base:
+		result = cur.execute('SELECT name FROM profiles WHERE user_id = ?', (user_id,)).fetchone()
+		return result
+
+async def get_classmates(klass):
+	with base:
+		result = cur.execute('SELECT * FROM profiles WHERE class = ?', (klass,)).fetchall()
+		return result
+
+async def get_profile_by_name(name):
+	with base:
+		result = cur.execute('SELECT * FROM profiles WHERE name = ?', (name,)).fetchone()
+		return result
+
+async def update_talon(talon, name):
+	with base:
+		cur.execute('UPDATE profiles SET talon = ? WHERE name= ?', (talon,name,)).fetchall()
+		base.commit()
+
+async def update_eat():
+	with base:
+		cur.execute('UPDATE profiles SET isate = 1 WHERE talon != 0 or talon != "0"')
+		base.commit()
+
+async def get_eaters():
+	with base:
+		result = cur.execute('SELECT class, name, talon, user_id from profiles where isate = 1').fetchall()
+		return result
+
+async def save_eaters(klass,name,talon, day,user_id):
+	with req_base:
+		req_cur.execute('INSERT INTO studentfood VALUES (?,?,?,?,?)', (klass, name,talon,day, user_id))
+		req_base.commit()
+
+async def update_name_in_food(name,user_id):
+	with req_base:
+		req_cur.execute('UPDATE studentfood SET whoate = ? where user_id = ?', (name, user_id))
+		req_base.commit()
+
+async def delete_talons():
+	with base:
+		cur.execute('UPDATE profiles SET talon = 0, isate = 0')
+		base.commit()
+
+async def get_myfood_command(classofuser, Nameofuser, month):
+	with req_base:
+		result = req_cur.execute('SELECT * FROM studentfood WHERE class = ? and whoate = ? and day LIKE ?', (classofuser, Nameofuser, f"{month}%")).fetchall()
+		return result
+
+# ПРОФИЛИ КОНЧАЮТСЯ
 
 async def change_klass_to_norm(klass):
 	with req_base:
@@ -176,7 +276,10 @@ async def change_klass(klass, userid):
 		base.commit()
 
 
-
+async def change_klass_profile(klass, userid):
+	with base:
+		cur.execute('UPDATE profiles SET class = ? WHERE user_id = ?', (klass, userid))
+		base.commit()
 
 async def auto_food(data):
 	with req_base:

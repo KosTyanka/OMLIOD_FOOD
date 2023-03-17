@@ -95,7 +95,7 @@ async def anti_starosta(wait_for):
 		#date = int(date[1])
 		weekday = datetime.datetime.today().weekday()
 		if weekday != 5 and weekday != 6:
-			if date == '08:00' or date == '08:05' or date == '08:10' or date == '08:15' or date == '08:20' or date == '10:30':
+			if date == '08:00' or date == '08:05' or date == '08:10' or date == '08:15' or date == '08:20' or date == '10:30' or date == '11:30':
 				day = datetime.date.today().isoformat()
 				for klass in range(7, 12):
 					for letter in range(1, 4):
@@ -124,3 +124,50 @@ async def auto_norm_klass(wait_for):
 			if len(ret[0]) > 3:
 				await sqlite_db.change_klass_to_norm(ret)
 				await bot.send_message(-821666496, f'поменял класс {ret}')
+
+
+
+
+async def isate_talon(wait_for):
+	print('запуск поел ли')
+	while True:
+		await asyncio.sleep(wait_for)
+		date = datetime.datetime.today()
+		date = str(date.strftime('%H:%M'))
+		#date = int(date[1])
+		#da
+		weekday = datetime.datetime.today().weekday()	
+		day = datetime.date.today().isoformat()
+		#ОБЫЧНАЯ ЕДА
+		if weekday != 5 and weekday != 6:	
+			if date == '13:30':
+				await sqlite_db.update_eat()
+				await bot.send_message(-821666496, f'Отметил поевших')
+				eaters = await sqlite_db.get_eaters()
+				for ret in eaters:
+					await sqlite_db.save_eaters(ret[0], ret[1],ret[2], day, ret[3])
+				await asyncio.sleep(10000)
+		
+
+
+
+async def delete_talon(wait_for):
+	print('запуск удаления талонов')
+	while True:
+		await asyncio.sleep(wait_for)
+		date = datetime.datetime.today()
+		date = str(date.strftime('%H:%M'))
+		#date = int(date[1])
+		#da
+		weekday = datetime.datetime.today().weekday()	
+		day = datetime.date.today().isoformat()
+		#ОБЫЧНАЯ ЕДА
+		if weekday != 5 and weekday != 6:	
+			if date == '6:00':
+				await sqlite_db.delete_talons()
+				await bot.send_message(-821666496, f'Удалил талоны')
+
+				await asyncio.sleep(10000)
+			
+
+

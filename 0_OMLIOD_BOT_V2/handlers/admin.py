@@ -124,8 +124,20 @@ async def give_starosta(message:types.Message):
 				phone_number = (await sqlite_db.sql_get_command(ret))[0]
 				phone_number = phone_number[0]
 				await sqlite_db.make_starosta(klass, user_id, phone_number)
+				await message.answer(f'добавил {klass} с номером {phone_number}')
 		except:
 			x = 1
+	read = await sqlite_db.get_starosty()
+	for ret in read:
+		ret = ret[0]
+		print(ret)
+		try:
+			user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=ret)
+			if user_channel_status["status"] == 'left':
+				await message.answer(f'{ret} вышел напишите сюда @Kos_Tyanka')
+		except:
+			x =2 
+	await message.answer('закончил')
 			
 
 @dp.message_handler(state=FSMAdmin.admin)

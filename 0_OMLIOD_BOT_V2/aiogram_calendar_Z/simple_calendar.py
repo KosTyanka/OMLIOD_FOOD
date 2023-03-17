@@ -10,7 +10,7 @@ from aiogram.types import CallbackQuery
 calendar_callback = CallbackData('simple_calendar', 'act', 'year', 'month', 'day')
 
 import locale
-locale.setlocale(locale.LC_ALL, '')
+locale.setlocale(locale.LC_ALL, ('ru_RU', 'UTF-8'))
 
 class SimpleCalendar:
 
@@ -29,21 +29,21 @@ class SimpleCalendar:
         ignore_callback = calendar_callback.new("IGNORE", year, month, 0)  # for buttons with no answer
         # First row - Month and Year
         inline_kb.row()
-        inline_kb.insert(InlineKeyboardButton(
-            "<<",
-            callback_data=calendar_callback.new("PREV-YEAR", year, month, 1)
-        ))
+        #inline_kb.insert(InlineKeyboardButton(
+        #    "<<",
+        #    callback_data=calendar_callback.new("PREV-YEAR", year, month, 1)
+        #))
         inline_kb.insert(InlineKeyboardButton(
             f'{calendar.month_name[month]} {str(year)}',
             callback_data=ignore_callback
         ))
-        inline_kb.insert(InlineKeyboardButton(
-            ">>",
-            callback_data=calendar_callback.new("NEXT-YEAR", year, month, 1)
-        ))
+        #inline_kb.insert(InlineKeyboardButton(
+        #    ">>",
+        #    callback_data=calendar_callback.new("NEXT-YEAR", year, month, 1)
+        #))
         # Second row - Week Days
         inline_kb.row()
-        for day in ["Пн", "Tu", "We", "Th", "Fr", "Sa", "Su"]:
+        for day in ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]:
             inline_kb.insert(InlineKeyboardButton(day, callback_data=ignore_callback))
 
         # Calendar rows - Days of month
@@ -61,11 +61,11 @@ class SimpleCalendar:
         # Last row - Buttons
         inline_kb.row()
         inline_kb.insert(InlineKeyboardButton(
-            "<", callback_data=calendar_callback.new("PREV-MONTH", year, month, day)
+            "< пред. месяц", callback_data=calendar_callback.new("PREV-MONTH", year, month, day)
         ))
-        inline_kb.insert(InlineKeyboardButton(" ", callback_data=ignore_callback))
+        #inline_kb.insert(InlineKeyboardButton(" ", callback_data=ignore_callback))
         inline_kb.insert(InlineKeyboardButton(
-            ">", callback_data=calendar_callback.new("NEXT-MONTH", year, month, day)
+            "след. месяц >", callback_data=calendar_callback.new("NEXT-MONTH", year, month, day)
         ))
 
         return inline_kb

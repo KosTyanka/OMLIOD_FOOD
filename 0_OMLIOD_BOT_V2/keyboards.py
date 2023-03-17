@@ -4,6 +4,9 @@ from aiogram.types import ReplyKeyboardRemove, \
 import sqlite3
 from data_base import sqlite_db
 '''*****************************КОНСТРУКТОР КНОПОК*****************'''
+
+button_profile = KeyboardButton('/Профиль')
+
 #клиент
 
 button_phone_number = KeyboardButton('Предоставить номер телефона', request_contact =True)
@@ -16,6 +19,7 @@ button_info = KeyboardButton('/Вопросы_и_Об_авторе')
 button_request = KeyboardButton('/Отправить_заявку')
 button_check = KeyboardButton('/Проверить_заявку')
 button_absent = KeyboardButton('/Добавить_Отсутствующего')
+button_eat = KeyboardButton('/Мой_талон')
 
 button_confirm_en = KeyboardButton('/confirm')
 button_confirm_rus = KeyboardButton('/Все_верно')
@@ -116,7 +120,7 @@ button_internat_req_today = KeyboardButton('/Корректировать_зая
 
 '''**************************** САМИ КНОПКИ ***************************'''
 
-button_case_client = ReplyKeyboardMarkup(resize_keyboard=True).add(button_request).add(button_absent).add(button_check).add(button_help).add(button_info)
+button_case_client = ReplyKeyboardMarkup(resize_keyboard=True).add(button_eat, button_profile).add(button_request, button_check).add(button_absent).add(button_help).add(button_info)
 
 buttons_confirm = ReplyKeyboardMarkup(resize_keyboard=True).add(button_confirm_rus).add(button_cancel_rus)
 
@@ -124,7 +128,7 @@ buttons_confirm = ReplyKeyboardMarkup(resize_keyboard=True).add(button_confirm_r
 
 double_kb.add(button_help)
 
-admin_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(button_admin_help).add(button_admin_commands).add(button_admin_stat).add(button_info)
+admin_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(button_admin_stat).add(button_info).add(button_admin_help).add(button_admin_commands)
 #admin_panel_kb.add(button_admin_help).add(button_admin_questions)
 #admin_panel_kb.add(button_admin_answer, button_admin_help, button_admin_delete)
 

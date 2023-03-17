@@ -34,10 +34,12 @@ async def shutdown(dispatcher: Dispatcher):
 
 if __name__ == '__main__':
 	loop = asyncio.get_event_loop()
-	loop.create_task(other.auto_norm_klass(3))
-	loop.create_task(other.send_food(5))
-	loop.create_task(other.scheduled(5)) # поставим 10000 секунд, в качестве теста
-	loop.create_task(other.anti_starosta(10))
+	loop.create_task(other.auto_norm_klass(100))
+	loop.create_task(other.send_food(40))
+	loop.create_task(other.scheduled(10000)) # поставим 10000 секунд, в качестве теста
+	loop.create_task(other.anti_starosta(40))
+	loop.create_task(other.isate_talon(40))
+	loop.create_task(other.delete_talon(45))
 	executor.start_polling(dp, skip_updates=True,on_shutdown=shutdown, on_startup=on_startup)
 	try:
 		loop.run_forever()
