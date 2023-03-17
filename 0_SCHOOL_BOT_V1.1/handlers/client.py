@@ -19,7 +19,7 @@ class FSMAdmin(StatesGroup):
 	nepoln = State()
 	confirm = State()
 	internat = State()
-	#admin = State()
+	absent = State()
 	#nick = State()
 
 @dp.message_handler(commands=['id'],state='*')
@@ -97,13 +97,13 @@ async def whatican_command(message:types.Message):
 	await message.answer('Для старост: используйте команду  /Отправить_заявку для отправки заявки на питание')
 
 
-@dp.callback_query_handler(lambda x: x.data and x.data.startswith('make'),state=FSMAdmin.normal)
-async def del_callback_run(callback_query: types.CallbackQuery, state: FSMContext):
-	async with state.proxy() as data:
-		data['class'] = callback_query.data.replace('make ', '')
-		await FSMAdmin.internat.set()
-		await callback_query.answer(text=f'{callback_query.data.replace("make ", "")} начните писать количество интерната', show_alert=False)
-		await bot.send_message(callback_query.from_user.id, f'{callback_query.data.replace("make ", "")} начните писать количество интерната', reply_markup=types.ReplyKeyboardRemove())
+#@dp.callback_query_handler(lambda x: x.data and x.data.startswith('make'),state=FSMAdmin.normal)
+#async def del_callback_run(callback_query: types.CallbackQuery, state: FSMContext):
+#	async with state.proxy() as data:
+#		data['class'] = callback_query.data.replace('make ', '')
+#		await FSMAdmin.internat.set()
+#		await callback_query.answer(text=f'{callback_query.data.replace("make ", "")} начните писать количество интерната', show_alert=False)
+#		await bot.send_message(callback_query.from_user.id, f'{callback_query.data.replace("make ", "")} начните писать количество интерната', reply_markup=types.ReplyKeyboardRemove())
 
 @dp.message_handler(state=FSMAdmin.internat)
 async def make_internat_command(message:types.Message, state: FSMContext):
@@ -124,16 +124,13 @@ async def make_internat_command(message:types.Message, state: FSMContext):
 
 				
 
-@dp.message_handler(commands=['Отправить_заявку'],state=FSMAdmin.normal)
+@dp.message_handler(commands=['Отправить_заявку'],state='*')
 async def make_request_command(message:types.Message, state: FSMContext):
 	internat_channel_status = await bot.get_chat_member(chat_id='-837114163', user_id=message.from_user.id)
 	if internat_channel_status["status"] != 'left':
-		day = datetime.date.today().isoformat()
-		read = await sqlite_db.internat_read_food(message)
-		for ret in read:
-			await bot.send_message(message.from_user.id, f'класс: {ret[0]} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
-			await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
-				add(InlineKeyboardButton(f'Добавить заявку {ret[0]}', callback_data=f'make {ret[0]}')))
+		await bot.send_message(message.from_user.id, f'Напишите еще одно сообщение')
+		await internat.ifinternat(message)
+		print('заведующий интерната зашел')	
 	user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=message.from_user.id)
 	if user_channel_status["status"] != 'left':
 		classofuser = await sqlite_db.class_get_command(message.from_user.id)
@@ -154,22 +151,12 @@ async def make_request_command(message:types.Message, state: FSMContext):
 	
 @dp.message_handler(commands=['Проверить_заявку'],state=FSMAdmin.normal)
 async def check_request_command(message:types.Message, state: FSMContext):
-	internat_channel_status = await bot.get_chat_member(chat_id='-837114163', user_id=message.from_user.id)
-	if internat_channel_status["status"] != 'left':
-		day = datetime.date.today().isoformat()
-		read = await sqlite_db.internat_read_food(message)
-		for ret in read:
-			await bot.send_message(message.from_user.id, f'класс: {ret[0]} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}', reply_markup=kb.button_case_client)
-			await bot.send_message(message.from_user.id, text='^^^', reply_markup=InlineKeyboardMarkup().\
-				add(InlineKeyboardButton(f'Добавить заявку {ret[0]}', callback_data=f'make {ret[0]}')))
-	else:
-		classofuser = await sqlite_db.class_get_command(message.from_user.id)
-		day = datetime.date.today().isoformat()
-		await message.answer(f'ваш класс: {str(classofuser[0])}')
-		await message.answer(f'сегодняшний день: {day}')
-		food_data = await sqlite_db.get_req_food_command(str(classofuser[0]), day)
-		#await message.answer(food_data)
-	
+	classofuser = await sqlite_db.class_get_command(message.from_user.id)
+	day = datetime.date.today().isoformat()
+	await message.answer(f'ваш класс: {str(classofuser[0])}')
+	await message.answer(f'сегодняшний день: {day}')
+	food_data = await sqlite_db.get_req_food_command(str(classofuser[0]), day)
+	#await message.answer(food_data)
 	if food_data != None:
 		a = food_data[0]
 		b = food_data[1]
@@ -177,12 +164,83 @@ async def check_request_command(message:types.Message, state: FSMContext):
 	else:
 		await message.answer('Не нашел заявку на сегодня')
 
+	absent_data = await sqlite_db.get_absent_command(classofuser[0],day)
+	if absent_data:
+		for ret in absent_data:
+			await message.answer(f'Отсутствующий: {ret[1]}\n' +
+				f'Причина: {ret[3]}', reply_markup=InlineKeyboardMarkup().\
+			add(InlineKeyboardButton(f'Удалить {ret[1]}', callback_data=f'whomissingdel{ret[1]}|{day}')))
+	else:
+		await message.answer('сегодня нет отсутствующих')
 
-#@dp.callback_query_handler(lambda x: x.data and x.data.startswith('del'))
-#@bot.callback_query_handler(func=lambda c: c.data == 'callback')
-#async def del_callback_run(callback_query: types.CallbackQuery):
-#    print(callback_query.data.replace('del ', ''))
-#    await callback_query.answer(text=f'{callback_query.data.replace("del ", "")} удалена.', show_alert=True)
+@dp.callback_query_handler(lambda x: x.data and x.data.startswith('whomissingdel'), state=FSMAdmin.normal)
+async def absent_del_callback_run(callback_query : types.CallbackQuery):
+	user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=callback_query.from_user.id)
+	if user_channel_status["status"] != 'left':
+		user_id = callback_query.from_user.id
+
+		data = callback_query.data.replace('whomissingdel', '').split('|')
+		whomissing = data[0]
+		day = data[1]
+		await sqlite_db.absent_delete_command(whomissing, day)
+		await callback_query.answer(text=f'{whomissing} удален', show_alert=True)
+		await bot.send_message(callback_query.from_user.id, f'Что дальше?', reply_markup=kb.button_case_client)
+	else:
+   		await bot.send_message(callback_query.from_user.id, 'У тебя нет прав для удаления заявки, напиши сюда для получения доступа @Kos_Tyanka')
+   		await callback_query.answer(text=f'Прочитай сообщение', show_alert=False)
+
+
+@dp.message_handler(commands=['Добавить_Отсутствующего'],state=FSMAdmin.normal)
+async def make_absent_command(message:types.Message, state: FSMContext):
+	user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=message.from_user.id)
+	if user_channel_status["status"] != 'left':
+		classofuser = await sqlite_db.class_get_command(message.from_user.id)
+		classofuser = classofuser[0]
+		async with state.proxy() as data:
+				data['class'] = str(classofuser)
+		await FSMAdmin.absent.set()
+		await bot.send_message(message.from_user.id, f'Напиши Фамилию, Имя отсутствующего. Ваш класс: {classofuser}')
+	else:
+		await bot.send_message(message.from_user.id, 'У тебя нет прав для отправки списка отсутствующих, напиши сюда для получения доступа @Kos_Tyanka')
+
+@dp.message_handler(state= FSMAdmin.absent)
+async def make_absent_command(message:types.Message, state: FSMContext):
+	async with state.proxy() as data:
+		try:
+			#Должен ответить Текстом отсутствующего
+			async with state.proxy() as data:
+				data['AbName'] = str(message.text)
+			#await FSMAdmin.confirm.set()
+			absent_confirm = InlineKeyboardMarkup(row_width=2)
+			zabolel_button = InlineKeyboardButton(text="Болезнь", callback_data=f'absent|{1}|{data["AbName"]}')
+			petition_button = InlineKeyboardButton(text="Заявление", callback_data=f'absent|{2}|{data["AbName"]}')
+			prikaz_button = InlineKeyboardButton(text="Приказ", callback_data=f'absent|{3}|{data["AbName"]}')
+			another_button = InlineKeyboardButton(text="Другое", callback_data=f'absent|{4}|{data["AbName"]}')
+			cancel_button = InlineKeyboardButton(text="Отмена", callback_data=f'absent|{5}|{data["AbName"]}')
+			absent_confirm.add(zabolel_button, petition_button, prikaz_button, another_button).add(cancel_button)
+			await message.answer(f'Отсутствующий: {data["AbName"]}', reply_markup=absent_confirm)
+			await state.finish()
+			await FSMAdmin.normal.set()
+		except:
+			print('da')
+
+
+@dp.callback_query_handler(lambda x: x.data and x.data.startswith('absent'), state=FSMAdmin.normal)
+async def del_callback_run(callback_query: types.CallbackQuery):
+	d = {1: 'Болезнь', 2: 'Заявление', 3: 'Приказ', 4: 'Другое', 5: 'Отмена'}
+	data = callback_query.data.split('|')
+	#whyabsentdata = data[1]
+	whyabsent = d[int(data[1])]
+	whoabsent = data[2]
+	classofuser = await sqlite_db.class_get_command(callback_query.from_user.id)
+	classofuser = str(classofuser[0])
+	#class TEXT, whomissing TEXT, day DATE, why TEXT
+	day = datetime.date.today().isoformat()
+	await sqlite_db.absent_add_command(classofuser, whoabsent, day, whyabsent)
+	await callback_query.answer(text=f'{whoabsent} занесен в базу по причине {whyabsent}.', show_alert=False)
+	await bot.send_message(callback_query.from_user.id, f'{whoabsent} отсутствует по причине {whyabsent}')
+	await bot.send_message(callback_query.from_user.id, f'Проверить или удалить отсутствующих можно командой /Проверить_заявку', reply_markup=kb.button_case_client)
+	await bot.delete_message(callback_query.from_user.id, message_id =callback_query.message.message_id)
 
 @dp.callback_query_handler(text = 'delete', state=FSMAdmin.normal)
 async def del_callback_run(callback_query : types.CallbackQuery):
@@ -196,9 +254,11 @@ async def del_callback_run(callback_query : types.CallbackQuery):
 		day = datetime.date.today().isoformat()
 		await sqlite_db.food_delete_command(str(classofuser[0]), day)
 		await callback_query.answer(text=f'Заявка удалена.', show_alert=True)
+		await bot.send_message(callback_query.from_user.id, f'Что дальше?', reply_markup=kb.button_case_client)
 	else:
    		await bot.send_message(callback_query.from_user.id, 'У тебя нет прав для удаления заявки, напиши сюда для получения доступа @Kos_Tyanka')
    		await callback_query.answer(text=f'Прочитай сообщение', show_alert=False)
+
 
 
 @dp.message_handler(state=FSMAdmin.poln)
@@ -236,18 +296,35 @@ async def confirm_command(message:types.Message, state: FSMContext):
 			await message.answer('Заявка отправлена, спасибо', reply_markup=kb.button_case_client)
 			klass = data['class']
 			klass = klass.strip("[('',)]")
-			print(klass)
+			#print(klass)
 			poln = data['poln']
 			nepoln = data['nepoln']
 			day = data['day']
+			await bot.send_message(-821666496, f'класс {klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
+			await bot.send_message(-855152164, f'класс {klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
 			await sqlite_db.req_add_command(state)
-			await bot.send_message(-821666496, f'{klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
 			await state.finish()
 			await FSMAdmin.normal.set()
 		except:
 			print(traceback.format_exc())
-			await message.answer('Используй команду /Отправить_заявку заново для заполнения заявки')
+			await message.answer('Используй команду /Отправить_заявку заново для заполнения заявки', reply_markup=kb.button_case_client)
 			
+
+
+#@dp.message_handler(commands=['Отправить_заявку'],state='*')
+#async def make_request_command(message:types.Message, state: FSMContext):
+#	user_channel_status = await bot.get_chat_member(chat_id='-1001870898709', user_id=message.from_user.id)
+#	if user_channel_status["status"] != 'left':
+#		classofuser = await sqlite_db.class_get_command(message.from_user.id)
+#		day = datetime.date.today().isoformat()
+#		#classofuser = await sqlite_db.class_get_command(message.from_user.id)
+#		#await message.answer(classofuser)
+#		async with state.proxy() as data:
+#			data['class'] = str(classofuser)
+#		await FSMAdmin.poln.set()
+#		await message.answer('Напиши сколько полных одним числом или /отмена для отмены заявки', reply_markup=types.ReplyKeyboardRemove())
+#	else:
+#		await bot.send_message(message.from_user.id, 'У тебя нет прав для отправки заявки, напиши сюда для получения доступа @Kos_Tyanka')
 
 
 
@@ -276,6 +353,8 @@ async def empty_reg(message : types.Message, state= None):
 	#efif ID ВОЗМОЖНО СТАРОСТ
 	elif await admin.ifadmin(message):
 		print('админ зашел')
+	elif await internat.ifinternat(message):
+		print('заведующий интерната зашел')
 	else:
 		await FSMAdmin.normal.set()
 		await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)
@@ -290,6 +369,8 @@ async def empty(message : types.Message, state= None):
 	#efif ID ВОЗМОЖНО СТАРОСТ
 	elif await admin.ifadmin(message):
 		print('админ зашел')
+	elif await internat.ifinternat(message):
+		print('заведующий интерната зашел')
 	else:
 		await FSMAdmin.normal.set()
 		await message.reply('Добро пожаловать в бота школы ОМЛИОД, используйте кнопки внизу для подробной информации', reply_markup=kb.button_case_client)

@@ -18,7 +18,7 @@ from handlers import client
 class FSMAdmin(StatesGroup):
 	internat = State()
 	change_food = State()
-	confirm = State()
+	confirminternat = State()
 
 
 
@@ -27,7 +27,7 @@ class FSMAdmin(StatesGroup):
 async def ifinternat(message: types.Message):
 	internat_channel_status = await bot.get_chat_member(chat_id='-837114163', user_id=message.from_user.id)
 	if internat_channel_status["status"] != 'left':
-		await message.answer('Вы отвечаете за интернат, вам нужно отправлять заявку о 6 разовом питании \n доступные команды можно узнать с помощью кнопок внизу', reply_markup= kb.internat_kb)
+		await message.answer('Вы отвечаете за интернат, вам нужно отправлять заявку о 6 разовом питании \nможете продолжать пользоваться ботом, для этого отправьте любую команду или сообщение\n', reply_markup= kb.internat_kb)
 		await FSMAdmin.internat.set()
 		return True
 	else:
@@ -65,7 +65,7 @@ async def get_food_internat_command(message:types.Message):
 				d = {0: 'Завтрак 1', 1: 'Завтрак 2', 2:'Обед', 3: 'Полдник', 4: 'Ужин 1', 5: 'Ужин 2'}
 				food = d[x]
 				await message.answer(f'{food} - {ret[x]}', reply_markup=InlineKeyboardMarkup().\
-			add(InlineKeyboardButton(f'Изменить заявку {food}', callback_data=f'change {x}')))
+			add(InlineKeyboardButton(f'Изменить заявку {food}', callback_data=f'change {x}|{day}')))
 
 
 @dp.message_handler(commands=['Корректировать_заявку'],state=FSMAdmin.internat)
@@ -85,24 +85,27 @@ async def get_food_internat_command(message:types.Message):
 				d = {0: 'Завтрак 1', 1: 'Завтрак 2', 2:'Обед', 3: 'Полдник', 4: 'Ужин 1', 5: 'Ужин 2'}
 				food = d[x]
 				await message.answer(f'{food} - {ret[x]}', reply_markup=InlineKeyboardMarkup().\
-			add(InlineKeyboardButton(f'Изменить заявку {food}', callback_data=f'change {x}')))
+			add(InlineKeyboardButton(f'Изменить заявку {food}', callback_data=f'change {x}|{day}')))
 		
 		#await FSMAdmin.confirm.set()
 
 @dp.callback_query_handler(lambda x: x.data and x.data.startswith('change'), state=FSMAdmin.internat)
 async def del_callback_run(callback_query : types.CallbackQuery, state: FSMContext):
 	truedata = callback_query.data.replace('change ', '')
+	truedata1 = truedata.split('|')[0] #x, day
+	truedata2 = truedata.split('|')[1] #x, day
 	call_data = callback_query
-	await change_internat(truedata, call_data, state)
+	await change_internat(truedata1, call_data, state,truedata2)
 	await callback_query.answer(text=f'Переход к редактированию заявки', show_alert=False)
 
-async def change_internat(x, callback_query, state):
+async def change_internat(x, callback_query, state, day):
 	d = {0: 'Завтрак 1', 1: 'Завтрак 2', 2:'Обед', 3: 'Полдник', 4: 'Ужин 1', 5: 'Ужин 2'}
 	x = int(x)
 	food = d[x]
 	async with state.proxy() as data:
 		data['food'] = x
-	await bot.send_message(callback_query.from_user.id, f'Напишите сколько людей ест {food} целым числом')
+		data['data'] = day
+	await bot.send_message(callback_query.from_user.id, f'Напишите сколько людей ест {food} целым числом', reply_markup=types.ReplyKeyboardRemove())
 	await FSMAdmin.change_food.set()
 
 @dp.message_handler(state=FSMAdmin.change_food)
@@ -116,7 +119,7 @@ async def change_food_command(message:types.Message, state: FSMContext):
 				food = d[x]
 				data['numberof'] = int(message.text)
 				number = data['numberof']
-				day = datetime.date.today().isoformat()
+				day = data['data']
 
 			await FSMAdmin.internat.set()
 			await sqlite_db.internat_change_command(food, number, day)
@@ -127,21 +130,21 @@ async def change_food_command(message:types.Message, state: FSMContext):
 
 
 
-@dp.message_handler(commands= ['confirm', 'все_верно'], state=FSMAdmin.confirm)
-async def confirm_command(message:types.Message, state: FSMContext):
-	async with state.proxy() as data:
-		try:
-			await message.answer('Заявка отправлена, спасибо', reply_markup=kb.internat_kb)
-			poln = data['poln']
-			nepoln = data['nepoln']
-			day = data['day']
-			await sqlite_db.req_add_command(state)
-			await bot.send_message(-821666496, f'{klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
-			await state.finish()
-			await FSMAdmin.normal.set()
-		except:
-			print(traceback.format_exc())
-			await message.answer('Используй команду /Отправить_заявку заново для заполнения заявки', reply_markup = kb.internat_kb)
+#@dp.message_handler(commands= ['confirm', 'все_верно'], state=FSMAdmin.confirminternat)
+#async def confirm_command(message:types.Message, state: FSMContext):
+#	async with state.proxy() as data:
+#		try:
+#			await message.answer('Заявка отправлена, спасибо', reply_markup=kb.internat_kb)
+#			poln = data['poln']
+#			nepoln = data['nepoln']
+#			day = data['day']
+#			await sqlite_db.req_add_command(state)
+#			await bot.send_message(-821666496, f'{klass}: полных - {poln} неполных - {nepoln} \nдата: {day}')
+#			await state.finish()
+#			await FSMAdmin.normal.set()
+#		except:
+#			print(traceback.format_exc())
+#			await message.answer('Ошибка. Используйте команду заново для заполнения заявки', reply_markup = kb.internat_kb)
 
 
 @dp.message_handler(commands=['Вопросы_и_Об_авторе'],state='*')

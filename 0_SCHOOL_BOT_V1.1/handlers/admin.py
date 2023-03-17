@@ -73,25 +73,36 @@ async def process_simple_calendar(callback_query: CallbackQuery, callback_data: 
 			f'Второй ужин: {ret[5]}\n'
 			)
 
+	await callback_query.message.answer(f'Отсутствующие за {date.strftime("%d/%m/%Y")}')
+	absent_data = await sqlite_db.get_all_absent_command(day)
+	if absent_data:
+		for ret in absent_data:
+			await callback_query.message.answer(f'класс: {ret[0]}\n' +
+				f'Отсутствующий: {ret[1]}\n' +
+				f'Причина: {ret[3]}',)
+	else:
+		await callback_query.message.answer('нет отсутствующих')
+
+
 	if selected:
 		await callback_query.message.answer(
 			f'Что дальше?',
 			reply_markup= kb.after_calendar_admin_kb
 		)
 
-
+#DEPRECATED AND OBSOLETE
 #ЭТО БУДЕТ CALLBACK QUERY
 #@dp.message_handler(commands=['Получить_питание'],state=FSMAdmin.admin)
-async def get_food_callback(message:types.Message):
-	await message.answer('Высылаю питание:')
-	read = await sqlite_db.sql_read_food(message)
-	for ret in read:
-		await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nполных: {ret[1]} \nнеполных: {ret[2]} \nДата заявки: {ret[3]}')
-	await message.answer('Питание интерната:')
-	read = await sqlite_db.internat_read_food(message)
-	for ret in read:
-		if ret[1] != 0:
-			await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}')
+#async def get_food_callback(message:types.Message):
+#	await message.answer('Высылаю питание:')
+#	read = await sqlite_db.sql_read_food(message)
+#	for ret in read:
+#		await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nполных: {ret[1]} \nнеполных: {ret[2]} \nДата заявки: {ret[3]}')
+#	await message.answer('Питание интерната:')
+#	read = await sqlite_db.internat_read_food(message)
+#	for ret in read:
+#		if ret[1] != 0:
+#			await bot.send_message(message.from_user.id, f'класс: {ret[0].strip("[()]")} \nинтернатников: {ret[1]} \nДата заявки: {ret[2]}')
 
 @dp.message_handler(commands=['Вопросы_и_Об_авторе'],state='*')
 async def info_command(message:types.Message):

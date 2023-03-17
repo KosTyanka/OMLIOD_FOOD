@@ -37,7 +37,7 @@ if __name__ == '__main__':
 	loop.create_task(other.auto_norm_klass(3))
 	loop.create_task(other.send_food(5))
 	loop.create_task(other.scheduled(5)) # поставим 10000 секунд, в качестве теста
-	loop.create_task(other.anti_starosta(5))
+	loop.create_task(other.anti_starosta(10))
 	executor.start_polling(dp, skip_updates=True,on_shutdown=shutdown, on_startup=on_startup)
 	try:
 		loop.run_forever()

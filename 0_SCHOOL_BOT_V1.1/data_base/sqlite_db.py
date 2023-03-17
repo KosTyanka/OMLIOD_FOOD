@@ -39,6 +39,11 @@ async def req_add_command(state):
 		req_cur.execute('INSERT INTO food VALUES (?, ?, ?, ?)', tuple(data.values()))
 		req_base.commit()
 
+async def absent_add_command(klass, whomissing, day, why):
+	with req_base:
+		req_cur.execute('INSERT INTO absent VALUES (?,?,?,?)', (klass, whomissing, day,why))
+		req_base.commit()
+
 async def get_all_id():
 	with base:
 		result = cur.execute('SELECT user_id FROM menu').fetchall()
@@ -48,8 +53,6 @@ async def make_starosta(klass, user_id, phone_number):
 	with base:
 		cur.execute('INSERT INTO starosty VALUES (?, ?, ?)', (klass, user_id, phone_number))
 		base.commit()
-
-
 
 
 async def internat_make_command(day):
@@ -70,15 +73,26 @@ async def sql_read_food(message):
 	return req_cur.execute('SELECT * FROM food').fetchall()
 
 async def sql_read_food_by_day(day):
-	return req_cur.execute('SELECT * FROM food WHERE day = ?', (day,)).fetchall()
+	return req_cur.execute('SELECT * FROM food WHERE day = ? ORDER BY class ASC', (day,)).fetchall()
 
 async def internat_read_food(message):
 	return req_cur.execute('SELECT * FROM internat').fetchall()
+
+async def get_absent_command(klass,day):
+	return req_cur.execute('SELECT * FROM absent WHERE class =? and day = ?', (klass,day,)).fetchall()
+
+async def get_all_absent_command(day):
+	return req_cur.execute('SELECT * FROM absent WHERE day = ? ORDER BY class ASC', (day,)).fetchall()
 
 #async def sql_delete_command(data):
 #	cur.execute('DELETE FROM menu WHERE phone == ?', (data,))
 #	base.commit()
 
+
+async def absent_delete_command(who, day):
+	with req_base:
+		req_cur.execute('DELETE FROM absent WHERE whomissing = ? AND day == ?', (who, day))
+		req_base.commit()
 
 async def food_delete_command(klass, day):
 	with req_base:
@@ -177,7 +191,6 @@ async def get_food(data, klass):
 		result = req_cur.execute('SELECT poln, nepoln FROM food WHERE day = ? and class = ?', (data, klass)).fetchall()
 		#print(result)
 		if not result:
-			print(1)
 			return False
 		if result != None:
 			return True

@@ -15,6 +15,7 @@ button_help = KeyboardButton('/Доступные_команды')
 button_info = KeyboardButton('/Вопросы_и_Об_авторе')
 button_request = KeyboardButton('/Отправить_заявку')
 button_check = KeyboardButton('/Проверить_заявку')
+button_absent = KeyboardButton('/Добавить_Отсутствующего')
 
 button_confirm_en = KeyboardButton('/confirm')
 button_confirm_rus = KeyboardButton('/Все_верно')
@@ -65,6 +66,13 @@ double_kb = ReplyKeyboardMarkup(
     resize_keyboard=True, one_time_keyboard=True
 )
 # INLINE КНОПКИ
+absent_confirm = InlineKeyboardMarkup(row_width=2)
+zabolel_button = InlineKeyboardButton(text="Болезнь", callback_data=f'sickness')
+petition_button = InlineKeyboardButton(text="Заявление", callback_data=f'petition')
+prikaz_button = InlineKeyboardButton(text="Приказ", callback_data=f'prikaz')
+absent_confirm.add(zabolel_button, petition_button, prikaz_button)
+
+
 urlkb = InlineKeyboardMarkup(row_width=1)
 url_Button = InlineKeyboardButton(text="Ссылка", url='https://docs.google.com/document/d/1jy5NAJ493ILbv98v-NBJjuDgSO44x4lO/edit?usp=sharing&ouid=114159890370412944594&rtpof=true&sd=true')
 url_Button2 = InlineKeyboardButton(text="Скачка файла", url='https://drive.google.com/uc?export=download&confirm=no_antivirus&id=1jy5NAJ493ILbv98v-NBJjuDgSO44x4lO')
@@ -108,7 +116,7 @@ button_internat_req_today = KeyboardButton('/Корректировать_зая
 
 '''**************************** САМИ КНОПКИ ***************************'''
 
-button_case_client = ReplyKeyboardMarkup(resize_keyboard=True).add(button_help).add(button_info).add(button_request).add(button_check)
+button_case_client = ReplyKeyboardMarkup(resize_keyboard=True).add(button_request).add(button_absent).add(button_check).add(button_help).add(button_info)
 
 buttons_confirm = ReplyKeyboardMarkup(resize_keyboard=True).add(button_confirm_rus).add(button_cancel_rus)
 

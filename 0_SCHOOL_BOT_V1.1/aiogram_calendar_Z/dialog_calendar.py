@@ -5,6 +5,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.callback_data import CallbackData
 from aiogram.types import CallbackQuery
 
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 # setting callback_data prefix and parts
 calendar_callback = CallbackData('dialog_calendar', 'act', 'year', 'month', 'day')
